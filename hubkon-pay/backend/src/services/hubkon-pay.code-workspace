@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"name": "hubkon-pay",
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../../Downloads/Projetos"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "Projetos"
+	}
+}

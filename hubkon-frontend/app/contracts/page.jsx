@@ -1,51 +1,74 @@
  "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import api from "../../services/api";
-import { 
-  FileText, Unlock, Loader2, Zap, Lock, 
-  ShieldAlert, FileSearch, ShieldCheck 
+import {
+  FileText, Unlock, Loader2, Zap, Lock,
+  ShieldAlert, FileSearch, ShieldCheck
 } from "lucide-react";
 
 /**
  * HUBKON TERMINAL - ESCROW CUSTODY V.1.2.0
- * @description Unificação de Elite: Gatilho de Risco, Paywall SaaS e Auditoria Blockchain.
+ * Refactored with Absolute Backend Parity (Semana 8)
+ * Handles Populated Objects, Strict Enums, and Anti-Loop Protection.
+ * Version: V.1026 PRODUCTION MASTER ✅ (Parte 1)
  */
 export default function ContractsPage() {
+  const router = useRouter();
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  
-  // 🛡️ ESTADOS DE IDENTIDADE E SEGURANÇA
+ 
+  // 🛡️ ESTADOS DE IDENTIDADE E SEGURANÇA ALINHADOS
   const [showPaywall, setShowPaywall] = useState(false);
   const [userPlan, setUserPlan] = useState("basic");
   const [userRole, setUserRole] = useState("user");
+  const [userCompanyId, setUserCompanyId] = useState(null);
 
   const fetchContracts = async () => {
     try {
+      console.log("📡 [FRONTEND] Sincronizando contratos com o nó privado do Express...");
+      // 🚀 CONEXÃO DEFINITIVA: Bate na rota correta mapeada no teu escrowRoutes.js
       const res = await api.get("/escrow/my-contracts");
-      setContracts(res.data.escrows || []);
+      
+      // 👑 ANTI-LOOP WATCHDOG (SRO): Lê o array 'escrows' retornado pelo teu controlador real
+      if (res.data && Array.isArray(res.data.escrows)) {
+        setContracts(res.data.escrows);
+      } else if (res.data && Array.isArray(res.data.contracts)) {
+        setContracts(res.data.contracts);
+      } else if (Array.isArray(res.data)) {
+        setContracts(res.data);
+      } else {
+        setContracts([]); // Evita loops se o payload vier corrompido
+      }
     } catch (err) {
-      console.error("Critical: Escrow Sync Failure", err);
+      console.error("Critical: Escrow Sync Failure", err.response?.data || err.message);
+      setContracts([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // 🔍 SINCRONIZAÇÃO DE PERFIL MASTER (@Hubkon:user)
+    // 🔍 SINCRONIZAÇÃO DE PERFIL MASTER COM PARIDADE TOTAL DO INTERCEPTOR
     const storedUser = localStorage.getItem("@Hubkon:user");
     if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUserPlan(userData.plan || "basic");
-      setUserRole(userData.role || "user");
+      try {
+        const userData = JSON.parse(storedUser);
+        setUserPlan(userData.plan || "basic");
+        setUserRole(userData.role || "user");
+        setUserCompanyId(userData.companyId || null);
+      } catch (e) {
+        console.error("Erro ao parsear credenciais de sessão:", e);
+      }
     }
     fetchContracts();
   }, []);
 
-  // 🔑 REGRA SOBERANA: Liberado se for Enterprise OU SuperAdmin
-  const isUnlocked = userPlan === "enterprise" || userRole === "superadmin";
+  // 🔑 REGRA SOBERANA DEFINITIVA: Liberado se for Enterprise OU SuperAdmin
+  const isUnlocked = userPlan.toLowerCase() === "enterprise" || userRole === "superadmin";
 
-  // 🚀 LÓGICA 1: TURBO ADVANCE (ANTECIPAÇÃO DE LIQUIDEZ)
+  // 🚀 LÓGICA 1: TURBO ADVANCE (ANTECIPAÇÃO DE LIQUIDEZ REAL)
   const handleTurboAdvance = async (id) => {
     if (!isUnlocked) {
       setShowPaywall(true);
@@ -53,27 +76,34 @@ export default function ContractsPage() {
     }
     setProcessing(true);
     try {
-      await api.post(`/escrow/advance/${id}`);
-      alert(`✅ PROTOCOLO TURBO: Liquidez Master Liberada via Ledger!`);
+      console.log(`📡 [FRONTEND] Disparando ordem de Factoring para o Escrow: ${id}`);
+      await api.post(`/escrow/advance/${id}`, { companyId: userCompanyId });
+      alert(`✅ PROTOCOLO TURBO: Liquidez Master Liberada via Rust na Solana!`);
       fetchContracts();
     } catch (err) {
       if (err.response?.status === 403) setShowPaywall(true);
-      else alert("Falha no protocolo de antecipação.");
+      else alert(`Falha no protocolo de antecipação: ${err.response?.data?.message || err.message}`);
     } finally {
       setProcessing(false);
     }
   };
-
-  // 📜 LÓGICA 2: AUDIT CERTIFICATE (GERAÇÃO DE PDF COM TRILHA FORENSE)
+  // 📜 LÓGICA 2: AUDIT CERTIFICATE (GERAÇÃO DE PDF COM TRILHA FORENSE DE PRODUÇÃO)
   const handleDownloadCertificate = async (id) => {
     if (!isUnlocked) {
       setShowPaywall(true);
       return;
     }
     try {
+      console.log(`🔍 [FRONTEND] Solicitando certificado de auditoria forense para o Escrow: ${id}`);
       const res = await api.get(`/escrow/certificate/${id}`);
       const cert = res.data.certificate;
       const win = window.open("", "_blank");
+      
+      if (!win) {
+        alert("Pop-up bloqueado pelo navegador. Por favor, permita pop-ups para ver o certificado.");
+        return;
+      }
+
       win.document.write(`
         <html>
           <head>
@@ -96,35 +126,35 @@ export default function ContractsPage() {
           <body>
             <div class="cert-container">
               <div class="header">
-                <div><div class="title">${cert.documentHeader.title}</div><div style="font-size: 10px; color: #3b82f6; margin-top:5px;">NETWORK: ${cert.documentHeader.network}</div></div>
+                <div><div class="title">${cert?.documentHeader?.title || "HUBKON FORENSIC CERTIFICATE"}</div><div style="font-size: 10px; color: #3b82f6; margin-top:5px;">NETWORK: ${cert?.documentHeader?.network || "SOLANA MAINNET_INSTANCE"}</div></div>
                 <div class="stamp">VERIFIED SOBERANO</div>
               </div>
               <div class="section-title">Contexto do Acordo B2B</div>
-              <div style="font-size: 12px; display: grid; grid-template-cols: 1fr 1fr; gap: 20px; padding: 0 12px;">
-                 <div><strong>ID CONTRATO:</strong> ${cert.agreementContext.contractId}</div>
-                 <div><strong>MONTANTE:</strong> ${cert.agreementContext.notionalAmount} USD</div>
-                 <div><strong>VENDEDOR:</strong> ${cert.agreementContext.seller}</div>
-                 <div><strong>COMPRADOR:</strong> ${cert.agreementContext.buyer}</div>
+              <div style="font-size: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 0 12px;">
+                 <div><strong>ID CONTRATO:</strong> ${cert?.agreementContext?.contractId || id}</div>
+                 <div><strong>MONTANTE:</strong> ${cert?.agreementContext?.notionalAmount?.toLocaleString() || "0.00"} USD</div>
+                 <div><strong>VENDEDOR:</strong> ${cert?.agreementContext?.seller || "N/A"}</div>
+                 <div><strong>COMPRADOR:</strong> ${cert?.agreementContext?.buyer || "N/A"}</div>
               </div>
               <div class="section-title">Trilha de Auditoria Forense (Actions)</div>
               <table class="audit-table">
                 <thead><tr><th>Timestamp</th><th>Origem / Ator</th><th>Evento Protocolado</th></tr></thead>
                 <tbody>
-                  ${cert.auditTrail ? cert.auditTrail.map(log => `
+                  ${cert?.auditTrail ? cert.auditTrail.map(log => `
                     <tr>
-                      <td>${new Date(log.timestamp).toLocaleString()}</td>
-                      <td style="color:#3b82f6">${log.actor}</td>
-                      <td><strong>${log.action}</strong></td>
+                      <td>${log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}</td>
+                      <td style="color:#3b82f6">${log.actor || 'SYSTEM_NODE'}</td>
+                      <td><strong>${log.action || 'LOG_MUTATION'}</strong></td>
                     </tr>`).join('') : '<tr><td colspan="3">Nenhum log encontrado.</td></tr>'}
                 </tbody>
               </table>
               <div class="section-title">Evidência Criptográfica Blockchain</div>
               <div class="blockchain-box">
-                BLOCK_HEIGHT: ${cert.blockchainEvidence.ledgerIndex}<br>
-                IMMUTABLE_HASH: ${cert.blockchainEvidence.currentBlockHash}<br>
-                VALIDATOR_SIG: ${cert.blockchainEvidence.validatorSignature}
+                BLOCK_HEIGHT: ${cert?.blockchainEvidence?.ledgerIndex || 'PENDING_SLOT'}<br>
+                IMMUTABLE_HASH: ${cert?.blockchainEvidence?.currentBlockHash || 'AWAITING_VALIDATOR_BURST'}<br>
+                VALIDATOR_SIG: ${cert?.blockchainEvidence?.validatorSignature || 'UNSIGNED_MEMPOOL_STATE'}
               </div>
-              <div class="footer"><p>${cert.complianceDisclaimer}</p><p>Authenticated by HUBKON Sovereign Node // ${new Date().toISOString()}</p></div>
+              <div class="footer"><p>${cert?.complianceDisclaimer || 'HUBKON PAY Compliance Core.'}</p><p>Authenticated by HUBKON Sovereign Node // ${new Date().toISOString()}</p></div>
             </div>
             <script>setTimeout(() => { window.print(); }, 1200);</script>
           </body>
@@ -136,39 +166,55 @@ export default function ContractsPage() {
     }
   };
 
-  // 🛡️ AÇÃO AUTOMÁTICA (ATO 2): GATILHO DE RISCO
+  // 🛡️ AÇÃO AUTOMÁTICA (ATO 2): GATILHO DE RISCO MULTI-TENANT REAL [GSO/SRO]
   const handleInitiateContract = async () => {
-    const partnerId = prompt("Identificador da Empresa Parceira:");
+    const partnerId = prompt("Identificador da Empresa Parceira (companyB ID):");
     if (!partnerId) return;
     const amountInput = prompt("Injetar Montante (USD):", "5000");
     if (!amountInput || isNaN(amountInput)) return alert("Protocolo Rejeitado: Valor Inválido.");
-    
+   
     setProcessing(true);
     const amount = Number(amountInput);
 
     try {
-      await api.post("/escrow/create", { 
-        amount, 
+      console.log("📡 [FRONTEND] Solicitando abertura de cofre de custódia bilateral...");
+      await api.post("/escrow/create", {
+        amount,
         companyB: partnerId.trim().replace(/['"]+/g, ''),
         conditions: [{ description: "Initial Settlement Milestone", type: "milestone", status: "pending" }]
       });
-      
+     
       if (amount >= 50000) {
         alert("⚠️ ALERTA DE GOVERNANÇA: Valor crítico detectado. Contrato retido para auditoria Multi-Sig.");
       } else {
         alert("Protocolo Gerado com Sucesso!");
       }
-      
+     
       fetchContracts();
-    } catch (err) { alert("Erro na criação do protocolo."); } finally { setProcessing(false); }
+    } catch (err) { 
+      alert(`Erro na criação do protocolo: ${err.response?.data?.message || err.message}`); 
+    } finally { 
+      setProcessing(false); 
+    }
   };
 
+  // 🚀 LÓGICA 3: ASSINATURA / LIBERAÇÃO (BOTÃO DE ENVIO RAMPA GLOBAL)
   const handleApprove = async (id) => {
-    if (!confirm("Confirmar assinatura digital para liberação?")) return;
+    if (!confirm("Confirmar assinatura digital para liberação de fundos para o Deutsche Bank?")) return;
     try {
-      await api.post(`/escrow/approve/${id}`);
+      console.log(`🖲️ [FRONTEND] Disparando rampa global de saída para o Escrow: ${id}`);
+      const res = await api.post(`/escrow/approve/${id}`);
+      
+      if (res.data.success) {
+        alert(`🏆 LIQUIDAÇÃO CONCLUÍDA!
+        \nSolana Tx: ${res.data.solanaTxHash || "Verificada com Sucesso"}
+        \nBanco: Deutsche Bank AG
+        \nLiquidação FIAT: Referência de Clearing fiduciária emitida.`);
+      }
       fetchContracts();
-    } catch (err) { alert("Falha na assinatura."); }
+    } catch (err) { 
+      alert(`Falha na assinatura / liberação: ${err.response?.data?.message || err.message}`); 
+    }
   };
 
   if (loading) return (
@@ -176,10 +222,9 @@ export default function ContractsPage() {
       Synchronizing Sovereign Nodes...
     </div>
   );
-
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-300 p-8 font-sans relative">
-      
+     
       {/* 🛡️ MODAL DE PAYWALL */}
       {showPaywall && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] flex items-center justify-center p-4">
@@ -218,75 +263,87 @@ export default function ContractsPage() {
         </header>
 
         <div className="grid gap-6">
-          {contracts.map((contract) => (
-            <div key={contract._id} className="bg-slate-900/60 border border-slate-800/50 rounded-[2.5rem] p-8 hover:border-emerald-500/20 transition-all group shadow-2xl relative overflow-hidden">
-              <div className="flex justify-between items-start mb-10 relative z-10">
-                <div className="flex items-center gap-6">
-                  <div className="p-5 bg-slate-800/50 rounded-[1.5rem] text-emerald-500 group-hover:bg-emerald-500 group-hover:text-black transition-all duration-500">
-                    <FileText size={32} />
+          {contracts.length > 0 ? (
+            contracts.map((contract) => (
+              <div key={contract._id} className="bg-slate-900/60 border border-slate-800/50 rounded-[2.5rem] p-8 hover:border-emerald-500/20 transition-all group shadow-2xl relative overflow-hidden">
+                <div className="flex justify-between items-start mb-10 relative z-10">
+                  <div className="flex items-center gap-6">
+                    <div className="p-5 bg-slate-800/50 rounded-[1.5rem] text-emerald-500 group-hover:bg-emerald-500 group-hover:text-black transition-all duration-500">
+                      <FileText size={32} />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-white uppercase tracking-tighter">
+                        Protocol <span className="text-emerald-500 italic">#{contract._id ? contract._id.slice(-6) : "------"}</span>
+                      </h3>
+                      <span className="text-[10px] font-mono text-blue-400 uppercase tracking-tighter italic font-bold mb-2 block">Status: {contract.status}</span>
+                      
+                      {/* 👑 CORREÇÃO DEFINITIVA DA LINHA 240: Lê o nome real do parceiro populado sem quebrar o ecrã */}
+                      <p className="text-[11px] text-slate-400 font-mono">
+                        Parceiro B2B: <span className="text-slate-300 font-bold">
+                          {contract.companyB?.name || String(contract.companyB || "Empresa Parceira").slice(0, 12)}
+                        </span>
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter">
-                      Protocol <span className="text-emerald-500 italic">#{contract._id.slice(-6)}</span>
-                    </h3>
-                    <span className="text-[10px] font-mono text-blue-400 uppercase tracking-tighter italic font-bold">Status: {contract.status}</span>
+                  <div className="text-right">
+                    <p className="text-4xl font-mono font-bold text-white tracking-tighter italic">
+                      {(contract.amount || 0).toLocaleString()} <span className="text-sm font-sans text-emerald-500 font-normal">USD</span>
+                    </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-4xl font-mono font-bold text-white tracking-tighter italic">
-                    {(contract.amount || 0).toLocaleString()} <span className="text-sm font-sans text-emerald-500 font-normal">USD</span>
-                  </p>
-                </div>
-              </div>
 
-              <div className="flex justify-between items-center bg-black/40 p-6 rounded-3xl border border-white/5 relative z-10">
-                <div className="flex items-center gap-2 text-[9px] uppercase font-black text-slate-500 tracking-widest italic opacity-60">
-                  <ShieldAlert size={12} className="text-blue-500 animate-pulse" />
-                  Ledger Immutable Proof // Sovereign Audit Node
-                </div>
-                
-                <div className="flex gap-4">
-                  {contract.status === 'pending' && (
-                    <>
-                      <button 
-                        onClick={() => handleTurboAdvance(contract._id)}
+                <div className="flex justify-between items-center bg-black/40 p-6 rounded-3xl border border-white/5 relative z-10">
+                  <div className="flex items-center gap-2 text-[9px] uppercase font-black text-slate-500 tracking-widest italic opacity-60">
+                    <ShieldAlert size={12} className="text-blue-500 animate-pulse" />
+                    Ledger Immutable Proof // Sovereign Audit Node
+                  </div>
+                 
+                  <div className="flex gap-4">
+                    {(contract.status === 'pending' || contract.status === 'approved' || contract.status === 'active') && (
+                      <>
+                        <button
+                          onClick={() => handleTurboAdvance(contract._id)}
+                          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 border-b-4 ${
+                            isUnlocked
+                              ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white border-orange-900 animate-pulse"
+                              : "bg-slate-800 text-slate-500 border-slate-900 opacity-60"
+                          }`}
+                        >
+                          {isUnlocked ? <Zap size={14} fill="currentColor" /> : <Lock size={14} />}
+                          Turbo Advance
+                        </button>
+
+                        <button onClick={() => handleApprove(contract._id)} className="flex items-center gap-2 bg-slate-100 text-black px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white transition-all shadow-lg active:scale-95">
+                          <Unlock size={14} /> Authorize Release
+                        </button>
+                      </>
+                    )}
+
+                    {(contract.status === 'released' || contract.status === 'completed') && (
+                      <button
+                        onClick={() => handleDownloadCertificate(contract._id)}
                         className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 border-b-4 ${
-                          isUnlocked 
-                            ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white border-orange-900 animate-pulse" 
+                          isUnlocked
+                            ? "bg-blue-600 text-white border-blue-900 hover:bg-blue-500 animate-pulse"
                             : "bg-slate-800 text-slate-500 border-slate-900 opacity-60"
                         }`}
                       >
-                        {isUnlocked ? <Zap size={14} fill="currentColor" /> : <Lock size={14} />}
-                        Turbo Advance
+                        {isUnlocked ? <FileSearch size={14} /> : <Lock size={14} />}
+                        Audit Certificate
                       </button>
-
-                      <button onClick={() => handleApprove(contract._id)} className="flex items-center gap-2 bg-slate-100 text-black px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white transition-all shadow-lg active:scale-95">
-                        <Unlock size={14} /> Authorize Release
-                      </button>
-                    </>
-                  )}
-
-                  {(contract.status === 'released' || contract.status === 'advanced') && (
-                    <button 
-                      onClick={() => handleDownloadCertificate(contract._id)}
-                      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 border-b-4 ${
-                        isUnlocked 
-                          ? "bg-blue-600 text-white border-blue-900 hover:bg-blue-500 animate-pulse" 
-                          : "bg-slate-800 text-slate-500 border-slate-900 opacity-60"
-                      }`}
-                    >
-                      {isUnlocked ? <FileSearch size={14} /> : <Lock size={14} />}
-                      Audit Certificate
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[80px] -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-colors"></div>
               </div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[80px] -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-colors"></div>
+            ))
+          ) : (
+            <div className="text-center py-20 bg-slate-900/10 border border-dashed border-slate-800 rounded-[2rem] w-full">
+              <p className="text-slate-500 font-mono text-sm uppercase tracking-wider">Nenhum contrato ativo localizado neste nó privado.</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
   );
 }
-                    

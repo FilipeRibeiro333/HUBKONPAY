@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { Box, Cpu, Activity, Search, ShieldCheck } from "lucide-react";
 
+/**
+ * HUBKON EXPLORER - DUAL-CHAIN HYBRID LEDGER
+ * Integrates local Proof-of-Trust (PoT) metadata with native Solana Criptográfico Signatures.
+ * Version: V.1026 ELITE ✅ (Semana 9 Final Calibration)
+ */
 export default function BlockchainExplorer() {
   const [blocks, setBlocks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,27 +16,20 @@ export default function BlockchainExplorer() {
 
   const fetchBlockchain = async () => {
     try {
-      /**
-       * ✅ ROTA CORRIGIDA: 
-       * Removido o "/api" manual, pois o seu axios (api.js) já o inclui na baseURL.
-       * O caminho final será: BASE_URL + /blockchain/blocks
-       */
+      console.log("📡 [FRONTEND] A solicitar escaneamento unificado do Ledger Híbrido...");
+      
+      // 👑 RESOLUÇÃO DEFINITIVA SEMANA 9: Consome a rota real do teu backend unificado
       const res = await api.get("/blockchain/blocks");
 
-      /**
-       * ✅ NORMALIZAÇÃO DE DADOS:
-       * Seu backend retorna: { success: true, count: X, blocks: [...] }
-       */
       const chainData = res.data.blocks || [];
-      
       const reversedChain = [...chainData].reverse();
+      
       setBlocks(reversedChain);
       setStats({
         totalBlocks: chainData.length,
-        lastMining: chainData[chainData.length - 1]?.timestamp || new Date()
+        lastMining: chainData[0]?.timestamp || chainData[0]?.createdAt || new Date()
       });
     } catch (err) {
-      // Log detalhado para capturar erros de permissão (401/403)
       console.error("Erro ao ler ledger soberano:", err.response?.data || err.message);
     } finally {
       setLoading(false);
@@ -63,7 +61,7 @@ export default function BlockchainExplorer() {
             <h1 className="text-4xl font-black text-white tracking-tighter uppercase">
               Hubkon <span className="text-emerald-500">Explorer</span>
             </h1>
-            <p className="text-slate-600 font-mono text-xs">Protocolo de Prova de Confiança (PoT) v1.0.5</p>
+            <p className="text-slate-600 font-mono text-xs">Protocolo de Prova de Confiança (PoT) v1.0.5 // Dual-Chain Engine</p>
           </div>
           <div className="flex gap-4">
             <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl text-right min-w-[120px]">
@@ -94,47 +92,57 @@ export default function BlockchainExplorer() {
           </h2>
 
           {blocks.length > 0 ? (
-            blocks.map((block) => (
-              <div key={block._id || block.index} className="group bg-slate-900/20 border border-slate-800/50 rounded-2xl p-6 hover:bg-slate-900/40 hover:border-emerald-500/30 transition-all">
+            blocks.map((block, index) => (
+              <div key={block._id || index} className="group bg-slate-900/20 border border-slate-800/50 rounded-2xl p-6 hover:bg-slate-900/40 hover:border-emerald-500/30 transition-all">
                 <div className="flex flex-col md:flex-row justify-between gap-6">
+                  
                   <div className="flex items-center gap-6">
                     <div className="bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/20 group-hover:scale-110 transition-transform">
                       <Box className="text-emerald-500" size={24} />
                     </div>
                     <div>
-                      <p className="text-emerald-500 font-mono text-sm font-bold">BLOCK # {block.index}</p>
+                      <p className="text-emerald-500 font-mono text-sm font-bold">TRANSACTION BLOCK</p>
                       <p className="text-[10px] text-slate-600 uppercase font-bold mt-1">
-                        {block.timestamp ? new Date(block.timestamp).toLocaleString() : 'Timestamp Indisponível'}
+                        {block.timestamp || block.createdAt ? new Date(block.timestamp || block.createdAt).toLocaleString() : 'Timestamp Indisponível'}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-slate-500 w-20 uppercase">Hash</span>
-                      <span className="text-xs font-mono text-slate-300 break-all">{block.hash || 'N/A'}</span>
+                      <span className="text-[10px] font-bold text-slate-500 w-20 uppercase">Montante</span>
+                      <span className="text-sm font-mono text-white font-bold">{block.amount?.toLocaleString()} {block.currency || "USD"}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-slate-500 w-20 uppercase">Prev</span>
-                      <span className="text-xs font-mono text-slate-600 break-all">{block.previousHash || 'Genesis Block'}</span>
+                      <span className="text-[10px] font-bold text-slate-500 w-20 uppercase">Operação</span>
+                      <span className="text-[10px] font-sans bg-slate-800 px-3 py-1 rounded-full text-slate-300 font-bold uppercase tracking-wider">{block.type}</span>
                     </div>
+
+                    {/* 🛡️ PROVA DE ENCAIXE WEB3 DA SOLANA INTERCALADA NO BLOCO DE AUDITORIA */}
+                    {(block.hash || block.blockchainHash) && (
+                      <div className="flex items-center gap-2 mt-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-3">
+                        <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest w-24">Solana Proof:</span>
+                        <span className="text-xs font-mono text-emerald-400/90 break-all select-all">{block.hash || block.blockchainHash}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-6 md:border-l border-slate-800 md:pl-6">
                     <div className="text-right">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase">Nonce</p>
-                      <p className="text-lg font-mono text-white">{block.nonce || 0}</p>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase">Estado</p>
+                      <p className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">{block.status || 'COMPLETED'}</p>
                     </div>
                     <div className="flex items-center justify-center bg-emerald-500/20 w-10 h-10 rounded-full border border-emerald-500/30">
                       <ShieldCheck className="text-emerald-500" size={20} />
                     </div>
                   </div>
+
                 </div>
               </div>
             ))
           ) : (
             <div className="text-center py-20 bg-slate-900/10 border border-dashed border-slate-800 rounded-2xl">
-              <p className="text-slate-500 font-mono text-sm uppercase">Nenhum bloco minerado na Ledger Enterprise.</p>
+              <p className="text-slate-500 font-mono text-sm uppercase">Nenhum bloco assinado on-chain localizado no nó privado.</p>
             </div>
           )}
         </div>

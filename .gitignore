@@ -21,3 +21,4 @@ Thumbs.db
 coverage/
 .cache/
 .vscode/
+cargo-build-bpf

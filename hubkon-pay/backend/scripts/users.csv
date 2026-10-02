@@ -1,0 +1,4 @@
+nome,email,senha,role,walletAddress
+Madié Hubkon,superadmin@hubkon.com,HubkonAdmin2026!,superadmin,0xYourSuperAdminWallet
+Admin Corporativo,admin@hubkon.com,123456,admin,0xYourAdminWallet
+Funcionario Teste,user1@hubkon.com,123456,user,0xYourUserWallet

@@ -1,0 +1,22 @@
+[package]
+name = "hubkon-solana-contracts"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "hubkon_solana_contracts"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+# 👑 NOVIDADE MULTIMOEDA: Ativa a compilação e exportação automática do JSON da IDL
+idl-build = ["anchor-lang/idl-build"]
+default = []
+
+[dependencies]
+anchor-lang = "0.32.1"
+getrandom = { version = "0.2.15", features = ["custom"] }
